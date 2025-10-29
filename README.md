@@ -1,30 +1,10 @@
 # Zmanim MCP Server
 
 [![PyPI version](https://badge.fury.io/py/zmanim-mcp-server.svg)](https://pypi.org/project/zmanim-mcp-server/)
+[![Downloads](https://pepy.tech/badge/zmanim-mcp-server)](https://pepy.tech/project/zmanim-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive MCP server for calculating Jewish prayer times (zmanim).
-
-## Installation
-
-### Via PyPI (Recommended)
-```bash
-# For use with Claude Desktop or other MCP clients
-uvx zmanim-mcp-server
-```
-
-### Claude Desktop Configuration
-
-Add to your `claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "zmanim": {
-      "command": "uvx",
-      "args": ["zmanim-mcp-server"]
-    }
-  }
-}
-```
 
 A comprehensive Model Context Protocol (MCP) server for calculating Jewish prayer times (zmanim) using the python-zmanim library.
 
@@ -56,36 +36,25 @@ This MCP server provides tools to calculate various Jewish prayer times and astr
 
 ## Installation
 
-### Prerequisites
-
+### Via PyPI (Recommended)
 ```bash
-# Install required Python packages
-pip install mcp zmanim --break-system-packages
+# For use with Claude Desktop or other MCP clients
+uvx zmanim-mcp-server
 ```
 
-### Setup
+### Claude Desktop Configuration
 
-1. Save the `zmanim_mcp.py` file to your desired location
-
-2. Configure your MCP client (e.g., Claude Desktop) to use this server:
-
-**For Claude Desktop**, add to your configuration file:
-
-macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
+Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
     "zmanim": {
-      "command": "python",
-      "args": ["/path/to/zmanim_mcp.py"]
+      "command": "uvx",
+      "args": ["zmanim-mcp-server"]
     }
   }
 }
 ```
-
-3. Restart your MCP client
 
 ## Usage Examples
 

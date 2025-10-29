@@ -1,0 +1,51 @@
+name: Publish to PyPI and Update Registry
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-pypi:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # For PyPI trusted publishing
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+  
+  # update-registry:
+  #   needs: publish-pypi
+  #   runs-on: ubuntu-latest
+    
+  #   steps:
+  #     - uses: actions/checkout@v4
+      
+  #     - name: Update version in server.json
+  #       run: |
+  #         VERSION=${GITHUB_REF#refs/tags/v}
+  #         sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" server.json
+      
+  #     - name: Update MCP Registry
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: |
+  #         npm install -g @modelcontextprotocol/publisher
+  #         mcp-publisher publish
