@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zmanim-mcp-server"
+version = "0.1.0"
+description = "MCP server providing Jewish prayer times (zmanim) calculations for any location worldwide"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Ari Roffe", email = "ariroffe72@gmail.com"}
+]
+keywords = [
+    "mcp",
+    "modelcontextprotocol",
+    "zmanim",
+    "jewish",
+    "prayer",
+    "times",
+    "hebrew",
+    "calendar",
+    "shabbat",
+    "halacha"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Religion",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Religion",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "zmanim>=0.5.0",
+    "pydantic>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ariroffe72/zmanim-mcp-server"
+Documentation = "https://github.com/ariroffe72/zmanim-mcp-server#readme"
+Repository = "https://github.com/ariroffe72/zmanim-mcp-server"
+Issues = "https://github.com/ariroffe72/zmanim-mcp-server/issues"
+
+[project.scripts]
+zmanim-mcp-server = "zmanim_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zmanim_mcp"]
