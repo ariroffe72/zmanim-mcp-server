@@ -59,3 +59,27 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: twine upload dist/*
+  update-registry:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'  # Get the latest commit with version updates
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install MCP Publisher
+        run: npm install -g @modelcontextprotocol/publisher
+      
+      - name: Publish to MCP Registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mcp-publisher login github --token $GITHUB_TOKEN
+          mcp-publisher publish server.json
+
