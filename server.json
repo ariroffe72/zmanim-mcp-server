@@ -3,7 +3,6 @@
     "name": "io.github.ariroffe72/zmanim-mcp-server",
     "description": "MCP server providing Jewish prayer times (zmanim) calculations for any location worldwide.",
     "title": "Zmanim MCP Server",
-    "status": "active",
     "repository": {
         "url": "https://github.com/ariroffe72/zmanim-mcp-server.git",
         "source": "github"
