@@ -1,5 +1,7 @@
 # Zmanim MCP Server
 
+<!-- mcp-name: io.github.ariroffe72/zmanim-mcp-server -->
+
 [![PyPI version](https://badge.fury.io/py/zmanim-mcp-server.svg)](https://pypi.org/project/zmanim-mcp-server/)
 [![Downloads](https://pepy.tech/badge/zmanim-mcp-server)](https://pepy.tech/project/zmanim-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
