@@ -40,7 +40,7 @@ requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=3.0.0",
     "zmanim>=0.3.1",
-    "pydantic>=2.0.0",
+    "pydantic>=2.4.0",
 ]
 
 [project.urls]
