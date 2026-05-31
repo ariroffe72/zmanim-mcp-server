@@ -136,7 +136,7 @@ def format_time_with_date(dt: Optional[datetime.datetime]) -> str:
 
 def parse_input_date(date_str: Optional[str]) -> Optional[datetime.date]:
     """Parse an optional YYYY-MM-DD input date."""
-    if date_str is None:
+    if not date_str:
         return None
     return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
