@@ -4,7 +4,11 @@
 
 [![PyPI version](https://badge.fury.io/py/zmanim-mcp-server.svg)](https://pypi.org/project/zmanim-mcp-server/)
 [![Downloads](https://pepy.tech/badge/zmanim-mcp-server)](https://pepy.tech/project/zmanim-mcp-server)
+[![MCP Registry](https://img.shields.io/badge/MCP-Registry-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=zmanim)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![GitHub Stars](https://img.shields.io/github/stars/ariroffe72/zmanim-mcp-server)](https://github.com/ariroffe72/zmanim-mcp-server/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/ariroffe72/zmanim-mcp-server)](https://github.com/ariroffe72/zmanim-mcp-server/commits/main)
 
 A comprehensive MCP server for calculating Jewish prayer times (zmanim).
 
@@ -169,7 +173,7 @@ For Shabbat times, there's an additional parameter:
 - Elevation can be incorporated in calculations
 
 ### Dependencies
-- **mcp**: Model Context Protocol SDK
+- **fastmcp**: Standalone FastMCP framework
 - **zmanim**: Python port of KosherJava zmanim library
 - **pydantic**: Input validation and data modeling
 

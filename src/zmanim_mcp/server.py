@@ -1,7 +1,7 @@
 from typing import Any, Optional
 import datetime
 from enum import Enum
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from pydantic import BaseModel, Field, ConfigDict
 import zmanim
 from zmanim.zmanim_calendar import ZmanimCalendar
