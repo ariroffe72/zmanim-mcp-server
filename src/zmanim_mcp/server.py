@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Annotated, Optional
 import datetime
 from enum import Enum
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from pydantic import BaseModel, Field, ConfigDict
 import zmanim
 from zmanim.zmanim_calendar import ZmanimCalendar
@@ -16,6 +16,55 @@ class ResponseFormat(str, Enum):
     """Output format for tool responses."""
     MARKDOWN = "markdown"
     JSON = "json"
+
+
+LocationName = Annotated[
+    str,
+    Field(
+        description="Name of the location (e.g., 'Jerusalem', 'New York, NY', 'London')",
+        min_length=1,
+        max_length=100,
+    ),
+]
+Latitude = Annotated[
+    float,
+    Field(
+        description="Latitude coordinate in decimal degrees (e.g., 40.7128 for New York)",
+        ge=-90.0,
+        le=90.0,
+    ),
+]
+Longitude = Annotated[
+    float,
+    Field(
+        description="Longitude coordinate in decimal degrees (e.g., -74.0060 for New York)",
+        ge=-180.0,
+        le=180.0,
+    ),
+]
+TimeZone = Annotated[
+    str,
+    Field(
+        description="IANA timezone identifier (e.g., 'America/New_York', 'Asia/Jerusalem', 'Europe/London')",
+        min_length=1,
+    ),
+]
+CalculationDate = Annotated[
+    Optional[str],
+    Field(description="Optional date for calculations in YYYY-MM-DD format (defaults to today if not provided)"),
+]
+OutputFormat = Annotated[
+    ResponseFormat,
+    Field(description="Output format: 'markdown' for human-readable or 'json' for machine-readable"),
+]
+CandleLightingOffset = Annotated[
+    int,
+    Field(
+        description="Minutes before sunset to light candles (typically 18-40 minutes depending on custom)",
+        ge=1,
+        le=60,
+    ),
+]
 
 
 # ============================================================================
@@ -85,6 +134,13 @@ def format_time_with_date(dt: Optional[datetime.datetime]) -> str:
     return dt.strftime("%Y-%m-%d %I:%M %p")
 
 
+def parse_input_date(date_str: Optional[str]) -> Optional[datetime.date]:
+    """Parse an optional YYYY-MM-DD input date."""
+    if not date_str:
+        return None
+    return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+
+
 # ============================================================================
 # Input Models
 # ============================================================================
@@ -140,6 +196,46 @@ class CandleLightingInput(LocationInput):
     )
 
 
+def build_location_input(
+    location: str,
+    latitude: float,
+    longitude: float,
+    time_zone: str,
+    date: Optional[str],
+    response_format: ResponseFormat,
+) -> LocationInput:
+    """Construct and validate standard location-based tool inputs."""
+    return LocationInput(
+        location=location,
+        latitude=latitude,
+        longitude=longitude,
+        time_zone=time_zone,
+        date=date,
+        response_format=response_format,
+    )
+
+
+def build_candle_lighting_input(
+    location: str,
+    latitude: float,
+    longitude: float,
+    time_zone: str,
+    date: Optional[str],
+    response_format: ResponseFormat,
+    candle_lighting_offset: int,
+) -> CandleLightingInput:
+    """Construct and validate Shabbat-specific tool inputs."""
+    return CandleLightingInput(
+        location=location,
+        latitude=latitude,
+        longitude=longitude,
+        time_zone=time_zone,
+        date=date,
+        response_format=response_format,
+        candle_lighting_offset=candle_lighting_offset,
+    )
+
+
 # ============================================================================
 # Tool Implementations
 # ============================================================================
@@ -154,7 +250,14 @@ class CandleLightingInput(LocationInput):
         "openWorldHint": False
     }
 )
-async def get_sunrise_sunset(params: LocationInput) -> str:
+async def get_sunrise_sunset(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+) -> str:
     """
     Get sunrise and sunset times for a specified location and date.
     
@@ -163,13 +266,12 @@ async def get_sunrise_sunset(params: LocationInput) -> str:
     use the NOAA algorithm for accuracy.
     
     Args:
-        params (LocationInput): Input parameters containing:
-            - location (str): Name of the location
-            - latitude (float): Latitude in decimal degrees (-90 to 90)
-            - longitude (float): Longitude in decimal degrees (-180 to 180)
-            - time_zone (str): IANA timezone identifier
-            - date (Optional[str]): Date in YYYY-MM-DD format (defaults to today)
-            - response_format (ResponseFormat): 'markdown' or 'json'
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
     
     Returns:
         str: Formatted sunrise and sunset times in the requested format
@@ -177,10 +279,8 @@ async def get_sunrise_sunset(params: LocationInput) -> str:
     Example:
         For New York on a winter day, sunrise might be at 7:15 AM and sunset at 4:30 PM.
     """
-    # Parse date if provided
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_location_input(location, latitude, longitude, time_zone, date, response_format)
+    date = parse_input_date(params.date)
     
     # Create calendar
     calendar = create_calendar(
@@ -230,7 +330,14 @@ async def get_sunrise_sunset(params: LocationInput) -> str:
         "openWorldHint": False
     }
 )
-async def get_shema_times(params: LocationInput) -> str:
+async def get_shema_times(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+) -> str:
     """
     Get the latest times for reciting the morning Shema according to different opinions.
     
@@ -240,7 +347,12 @@ async def get_shema_times(params: LocationInput) -> str:
     the MG"A is based on 3 temporal hours from dawn (72 minutes before sunrise).
     
     Args:
-        params (LocationInput): Input parameters containing location and date information
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
     
     Returns:
         str: Latest times for Shema according to both opinions in the requested format
@@ -248,9 +360,8 @@ async def get_shema_times(params: LocationInput) -> str:
     Note:
         The MG"A time is typically earlier and more stringent than the GR"A time.
     """
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_location_input(location, latitude, longitude, time_zone, date, response_format)
+    date = parse_input_date(params.date)
     
     calendar = create_calendar(
         params.location,
@@ -302,7 +413,14 @@ async def get_shema_times(params: LocationInput) -> str:
         "openWorldHint": False
     }
 )
-async def get_tefila_times(params: LocationInput) -> str:
+async def get_tefila_times(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+) -> str:
     """
     Get the latest times for morning prayer (Tefila/Shacharis) according to different opinions.
     
@@ -311,14 +429,18 @@ async def get_tefila_times(params: LocationInput) -> str:
     (4 temporal hours from dawn).
     
     Args:
-        params (LocationInput): Input parameters containing location and date information
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
     
     Returns:
         str: Latest times for Tefila according to both opinions in the requested format
     """
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_location_input(location, latitude, longitude, time_zone, date, response_format)
+    date = parse_input_date(params.date)
     
     calendar = create_calendar(
         params.location,
@@ -369,7 +491,14 @@ async def get_tefila_times(params: LocationInput) -> str:
         "openWorldHint": False
     }
 )
-async def get_mincha_times(params: LocationInput) -> str:
+async def get_mincha_times(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+) -> str:
     """
     Get the times for Mincha (afternoon prayer) including Mincha Gedola and Mincha Ketana.
     
@@ -379,14 +508,18 @@ async def get_mincha_times(params: LocationInput) -> str:
     - Plag HaMincha: Latest time according to some opinions (1.25 hours before sunset)
     
     Args:
-        params (LocationInput): Input parameters containing location and date information
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
     
     Returns:
         str: All relevant Mincha times in the requested format
     """
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_location_input(location, latitude, longitude, time_zone, date, response_format)
+    date = parse_input_date(params.date)
     
     calendar = create_calendar(
         params.location,
@@ -445,7 +578,15 @@ async def get_mincha_times(params: LocationInput) -> str:
         "openWorldHint": False
     }
 )
-async def get_shabbat_times(params: CandleLightingInput) -> str:
+async def get_shabbat_times(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+    candle_lighting_offset: CandleLightingOffset = 18,
+) -> str:
     """
     Get Shabbat candle lighting and Havdalah times for a specified location and date.
     
@@ -455,9 +596,13 @@ async def get_shabbat_times(params: CandleLightingInput) -> str:
     - Tzeis HaKochavim (nightfall, when Shabbat ends, 72 minutes after sunset)
     
     Args:
-        params (CandleLightingInput): Input parameters including:
-            - location, latitude, longitude, time_zone, date (from LocationInput)
-            - candle_lighting_offset: Minutes before sunset (default 18)
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
+        candle_lighting_offset: Minutes before sunset for candle lighting.
     
     Returns:
         str: Shabbat times in the requested format
@@ -466,9 +611,16 @@ async def get_shabbat_times(params: CandleLightingInput) -> str:
         Different communities have different customs for candle lighting time.
         Jerusalem uses 40 minutes, while many communities use 18 minutes.
     """
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_candle_lighting_input(
+        location,
+        latitude,
+        longitude,
+        time_zone,
+        date,
+        response_format,
+        candle_lighting_offset,
+    )
+    date = parse_input_date(params.date)
     
     calendar = create_calendar(
         params.location,
@@ -529,7 +681,14 @@ async def get_shabbat_times(params: CandleLightingInput) -> str:
         "openWorldHint": False
     }
 )
-async def get_daily_times(params: LocationInput) -> str:
+async def get_daily_times(
+    location: LocationName,
+    latitude: Latitude,
+    longitude: Longitude,
+    time_zone: TimeZone,
+    date: CalculationDate = None,
+    response_format: OutputFormat = ResponseFormat.MARKDOWN,
+) -> str:
     """
     Get a comprehensive set of daily zmanim (Jewish prayer times) for a location.
     
@@ -544,7 +703,12 @@ async def get_daily_times(params: LocationInput) -> str:
     - Tzeis HaKochavim (nightfall)
     
     Args:
-        params (LocationInput): Input parameters containing location and date information
+        location: Name of the location.
+        latitude: Latitude in decimal degrees (-90 to 90).
+        longitude: Longitude in decimal degrees (-180 to 180).
+        time_zone: IANA timezone identifier.
+        date: Optional date in YYYY-MM-DD format.
+        response_format: Output format for the response.
     
     Returns:
         str: Complete set of daily zmanim in the requested format
@@ -552,9 +716,8 @@ async def get_daily_times(params: LocationInput) -> str:
     Example:
         Use this tool to get a complete daily schedule of prayer times for any location.
     """
-    date = None
-    if params.date:
-        date = datetime.datetime.strptime(params.date, "%Y-%m-%d").date()
+    params = build_location_input(location, latitude, longitude, time_zone, date, response_format)
+    date = parse_input_date(params.date)
     
     calendar = create_calendar(
         params.location,
